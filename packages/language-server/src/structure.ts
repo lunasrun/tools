@@ -40,7 +40,7 @@ const BLOCK_SYMBOL_KIND: Record<BlockKind, SymbolKind> = {
 
 /**
  * Build a `documentSymbol` outline: one top-level symbol per block, with each
- * `{ … }` interpolation nested beneath its block.
+ * `${ … }` interpolation nested beneath its block.
  */
 export function documentSymbols(source: string): DocumentSymbol[] {
   const index = new LineIndex(source);
@@ -51,7 +51,7 @@ export function documentSymbols(source: string): DocumentSymbol[] {
     const children: DocumentSymbol[] = block.interpolations.map((interp, i) => {
       const interpRange = toRange(index, interp);
       return {
-        name: `{ … } #${i + 1}`,
+        name: `\${ … } #${i + 1}`,
         kind: SymbolKind.Variable,
         range: interpRange,
         selectionRange: interpRange,
