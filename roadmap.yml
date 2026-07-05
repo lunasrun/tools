@@ -57,16 +57,30 @@ milestones:
     items:
       - id: ls-diagnostics
         title: Publish compiler diagnostics (offset -> LSP range)
-        status: in_progress
+        status: done
       - id: ls-node-entry
         title: Node stdio entry
         status: done
       - id: ls-browser-entry
         title: Browser web-worker entry
         status: done
+      - id: ls-structural-features
+        title: documentSymbol / foldingRange / selectionRange (TS block scanner)
+        status: done
       - id: ls-hover-defs
         title: Hover / go-to-definition / references (uses analysis APIs)
         status: todo
+        # Blocked on lunas-side parser exposure. The current @lunas-tools/wasm
+        # `compile(source) => { code, diagnostics }` seam yields no AST, symbol
+        # table, or binding spans, so semantic hover/def/refs cannot be done
+        # acceptably in TS. Needs Lunas to expose a parse/analyze API (AST +
+        # resolved bindings with source spans) through the wasm boundary.
+      - id: ls-semantic-tokens
+        title: Semantic tokens for .lunas blocks
+        status: todo
+        # Also blocked on lunas-side parser exposure: precise token
+        # classification for script/style/html interpolations needs the real
+        # tokenizer/AST, not the structural block scanner.
 
   - id: tsc
     title: lunas-tsc CLI

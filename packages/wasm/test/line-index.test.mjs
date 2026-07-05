@@ -90,6 +90,34 @@ test("rangeAt maps both endpoints", () => {
   });
 });
 
+test("positionU16At maps UTF-16 offsets across lines", () => {
+  const idx = new LineIndex("ab\ncd");
+  assert.deepEqual(idx.positionU16At(0), pos(0, 0));
+  assert.deepEqual(idx.positionU16At(2), pos(0, 2)); // the '\n'
+  assert.deepEqual(idx.positionU16At(3), pos(1, 0)); // 'c'
+  assert.deepEqual(idx.positionU16At(5), pos(1, 2)); // end
+});
+
+test("positionU16At counts an emoji as two UTF-16 units", () => {
+  const idx = new LineIndex("a😀b"); // a(1) 😀(2) b(1) -> 4 UTF-16 units
+  assert.deepEqual(idx.positionU16At(0), pos(0, 0)); // 'a'
+  assert.deepEqual(idx.positionU16At(1), pos(0, 1)); // emoji start
+  assert.deepEqual(idx.positionU16At(3), pos(0, 3)); // 'b'
+  assert.deepEqual(idx.positionU16At(4), pos(0, 4)); // end
+});
+
+test("positionU16At snaps inside a surrogate pair to its start", () => {
+  const idx = new LineIndex("a😀b");
+  // Offset 2 lands between the surrogate halves; snaps back to the emoji start.
+  assert.deepEqual(idx.positionU16At(2), pos(0, 1));
+});
+
+test("positionU16At clamps out-of-range offsets", () => {
+  const idx = new LineIndex("abc");
+  assert.deepEqual(idx.positionU16At(-5), pos(0, 0));
+  assert.deepEqual(idx.positionU16At(99), pos(0, 3));
+});
+
 test("realistic .lunas-shaped source", () => {
   const src = ["html:", '  <p>{ msg }</p>', "script:", "  let msg = 'あ'"].join(
     "\n",
