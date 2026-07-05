@@ -1,0 +1,95 @@
+# lunas-tools roadmap — single source of truth.
+#
+# Statuses: done | in_progress | todo | deferred
+# Respect dependency order: compiler seam -> grammar -> language server / tsc
+# -> vscode. Each item is completed by a PR that also flips its status to
+# `done` (touch only your own item lines).
+
+meta:
+  updated: 2026-07-05
+  extension: ".lunas"
+
+milestones:
+  - id: foundation
+    title: Monorepo foundation
+    items:
+      - id: monorepo-scaffold
+        title: pnpm workspace, tsconfig base, submodule external/lunas
+        status: done
+      - id: ci-quality-gate
+        title: CI (build/typecheck/test + wasm build job)
+        status: done
+      - id: release-automation
+        title: Auto release PR (main -> beta), PR labeling
+        status: done
+
+  - id: compiler-seam
+    title: "@lunas-tools/wasm — the compiler boundary"
+    items:
+      - id: wasm-api
+        title: Stable JS API (compile) + diagnostic types
+        status: done
+      - id: line-index
+        title: LineIndex byte-offset -> line/column mapping (well-tested)
+        status: done
+      - id: wasm-build
+        title: wasm-pack build from submodule (node + web targets)
+        status: in_progress
+      - id: npm-swap
+        title: Swap to published @lunas/wasm npm dep (post-publish)
+        status: deferred
+
+  - id: grammar
+    title: Syntax highlighting
+    items:
+      - id: tmlanguage
+        title: TextMate grammar for .lunas (html/style/script blocks)
+        status: in_progress
+      - id: language-configuration
+        title: Comments, brackets, auto-closing pairs
+        status: done
+      - id: grammar-embedded-langs
+        title: Embed TS/JS/CSS/HTML grammars in the right blocks
+        status: todo
+
+  - id: language-server
+    title: lunas-ls
+    items:
+      - id: ls-diagnostics
+        title: Publish compiler diagnostics (offset -> LSP range)
+        status: in_progress
+      - id: ls-node-entry
+        title: Node stdio entry
+        status: done
+      - id: ls-browser-entry
+        title: Browser web-worker entry
+        status: done
+      - id: ls-hover-defs
+        title: Hover / go-to-definition / references (uses analysis APIs)
+        status: todo
+
+  - id: tsc
+    title: lunas-tsc CLI
+    items:
+      - id: tsc-cli
+        title: Glob .lunas, compile, report diagnostics, exit code
+        status: in_progress
+      - id: tsc-watch
+        title: --watch mode
+        status: todo
+
+  - id: vscode
+    title: lunas-vscode extension
+    items:
+      - id: vscode-language
+        title: Contribute .lunas language + grammar
+        status: in_progress
+      - id: vscode-client-node
+        title: Launch lunas-ls (desktop)
+        status: todo
+      - id: vscode-client-web
+        title: Web extension host (browser)
+        status: todo
+      - id: vscode-publish
+        title: Package + publish to Marketplace / OpenVSX
+        status: deferred

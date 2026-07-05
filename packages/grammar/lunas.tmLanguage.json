@@ -1,0 +1,92 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Lunas",
+  "scopeName": "source.lunas",
+  "fileTypes": ["lunas"],
+  "patterns": [
+    { "include": "#script-block" },
+    { "include": "#style-block" },
+    { "include": "#html-block" }
+  ],
+  "repository": {
+    "block-end": {
+      "comment": "Lookahead terminating a block at the next top-level block header.",
+      "match": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)"
+    },
+    "html-block": {
+      "begin": "^([ \\t]*)(html)[ \\t]*(:)",
+      "beginCaptures": {
+        "2": { "name": "keyword.control.block.lunas" },
+        "3": { "name": "punctuation.separator.block.lunas" }
+      },
+      "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "contentName": "meta.embedded.block.html",
+      "patterns": [
+        { "include": "#interpolation" },
+        { "include": "#directives" },
+        { "include": "text.html.basic" }
+      ]
+    },
+    "style-block": {
+      "begin": "^([ \\t]*)(style)[ \\t]*(:)",
+      "beginCaptures": {
+        "2": { "name": "keyword.control.block.lunas" },
+        "3": { "name": "punctuation.separator.block.lunas" }
+      },
+      "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "contentName": "meta.embedded.block.css",
+      "patterns": [{ "include": "source.css" }]
+    },
+    "script-block": {
+      "begin": "^([ \\t]*)(script)[ \\t]*(:)",
+      "beginCaptures": {
+        "2": { "name": "keyword.control.block.lunas" },
+        "3": { "name": "punctuation.separator.block.lunas" }
+      },
+      "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "contentName": "meta.embedded.block.ts",
+      "patterns": [{ "include": "source.ts" }]
+    },
+    "interpolation": {
+      "comment": "Template interpolation: { expression } as embedded TypeScript.",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": { "name": "punctuation.section.embedded.begin.lunas" }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": { "name": "punctuation.section.embedded.end.lunas" }
+      },
+      "name": "meta.embedded.expression.lunas",
+      "patterns": [{ "include": "source.ts" }]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "comment": "Structural directives :if / :elif / :else / :for.",
+          "match": "(?<=\\s)(:)(if|elif|else|for)\\b",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.lunas" },
+            "2": { "name": "keyword.control.directive.lunas" }
+          }
+        },
+        {
+          "comment": "Attribute binding :name= .",
+          "match": "(?<=\\s)(:)([\\w-]+)(?=\\s*=)",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.lunas" },
+            "2": { "name": "entity.other.attribute-name.binding.lunas" }
+          }
+        },
+        {
+          "comment": "Event handler @event= .",
+          "match": "(?<=\\s)(@)([\\w-]+)(?=\\s*=)",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.lunas" },
+            "2": { "name": "entity.other.attribute-name.event.lunas" }
+          }
+        }
+      ]
+    }
+  }
+}
