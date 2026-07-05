@@ -44,13 +44,13 @@ milestones:
     items:
       - id: tmlanguage
         title: TextMate grammar for .lunas (html/style/script blocks)
-        status: in_progress
+        status: done
       - id: language-configuration
         title: Comments, brackets, auto-closing pairs
         status: done
       - id: grammar-embedded-langs
         title: Embed TS/JS/CSS/HTML grammars in the right blocks
-        status: todo
+        status: done
 
   - id: language-server
     title: lunas-ls

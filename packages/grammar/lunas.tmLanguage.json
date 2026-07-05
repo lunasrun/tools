@@ -4,6 +4,7 @@
   "scopeName": "source.lunas",
   "fileTypes": ["lunas"],
   "patterns": [
+    { "include": "#top-level-directives" },
     { "include": "#script-block" },
     { "include": "#style-block" },
     { "include": "#html-block" }
@@ -13,80 +14,245 @@
       "comment": "Lookahead terminating a block at the next top-level block header.",
       "match": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)"
     },
+    "top-level-directives": {
+      "comment": "File-level directives: @input prop declarations and @use component imports.",
+      "patterns": [
+        {
+          "comment": "@input name:type = default  (type/default optional; trailing ? marks nullable).",
+          "match": "^([ \\t]*)(@input)\\b[ \\t]*([A-Za-z_$][\\w$]*)?([?])?[ \\t]*(?:(:)[ \\t]*([\\w$.<>\\[\\]| ]+?))?[ \\t]*(?:(=)[ \\t]*(.*))?$",
+          "captures": {
+            "2": { "name": "keyword.control.directive.lunas" },
+            "3": { "name": "variable.other.property.lunas" },
+            "4": { "name": "keyword.operator.optional.lunas" },
+            "5": { "name": "punctuation.separator.annotation.lunas" },
+            "6": { "name": "support.type.lunas" },
+            "7": { "name": "keyword.operator.assignment.lunas" },
+            "8": { "name": "meta.embedded.expression.lunas", "patterns": [{ "include": "source.ts" }] }
+          }
+        },
+        {
+          "comment": "@use Component from \"./Path\" — component import.",
+          "match": "^([ \\t]*)(@use)\\b[ \\t]*([A-Za-z_$][\\w$]*)?[ \\t]*(?:(from)[ \\t]*(\"[^\"]*\"|'[^']*'))?",
+          "captures": {
+            "2": { "name": "keyword.control.directive.lunas" },
+            "3": { "name": "entity.name.type.class.lunas" },
+            "4": { "name": "keyword.control.from.lunas" },
+            "5": { "name": "string.quoted.lunas" }
+          }
+        }
+      ]
+    },
     "html-block": {
-      "begin": "^([ \\t]*)(html)[ \\t]*(:)",
+      "begin": "^([ \\t]*)(html)([ \\t]*)(:)",
       "beginCaptures": {
         "2": { "name": "keyword.control.block.lunas" },
-        "3": { "name": "punctuation.separator.block.lunas" }
+        "4": { "name": "punctuation.separator.block.lunas" }
       },
       "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "name": "meta.block.html.lunas",
       "contentName": "meta.embedded.block.html",
       "patterns": [
         { "include": "#interpolation" },
-        { "include": "#directives" },
+        { "include": "#tag-open" },
+        { "include": "#component-tag-close" },
         { "include": "text.html.basic" }
       ]
     },
     "style-block": {
-      "begin": "^([ \\t]*)(style)[ \\t]*(:)",
+      "begin": "^([ \\t]*)(style)([ \\t]*)(:)",
       "beginCaptures": {
         "2": { "name": "keyword.control.block.lunas" },
-        "3": { "name": "punctuation.separator.block.lunas" }
+        "4": { "name": "punctuation.separator.block.lunas" }
       },
       "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "name": "meta.block.style.lunas",
       "contentName": "meta.embedded.block.css",
       "patterns": [{ "include": "source.css" }]
     },
     "script-block": {
-      "begin": "^([ \\t]*)(script)[ \\t]*(:)",
+      "begin": "^([ \\t]*)(script)([ \\t]*)(:)",
       "beginCaptures": {
         "2": { "name": "keyword.control.block.lunas" },
-        "3": { "name": "punctuation.separator.block.lunas" }
+        "4": { "name": "punctuation.separator.block.lunas" }
       },
       "end": "(?=^[ \\t]*(?:html|style|script)[ \\t]*:)",
+      "name": "meta.block.script.lunas",
       "contentName": "meta.embedded.block.ts",
       "patterns": [{ "include": "source.ts" }]
     },
     "interpolation": {
-      "comment": "Template interpolation: { expression } as embedded TypeScript.",
-      "begin": "\\{",
+      "comment": "Template interpolation: ${ expr } as embedded TypeScript. Applies inside text and attribute values.",
+      "begin": "(\\$)(\\{)",
       "beginCaptures": {
-        "0": { "name": "punctuation.section.embedded.begin.lunas" }
+        "1": { "name": "punctuation.definition.template-expression.begin.lunas" },
+        "2": { "name": "punctuation.section.embedded.begin.lunas" }
       },
-      "end": "\\}",
+      "end": "(\\})",
       "endCaptures": {
-        "0": { "name": "punctuation.section.embedded.end.lunas" }
+        "1": { "name": "punctuation.section.embedded.end.lunas" }
       },
       "name": "meta.embedded.expression.lunas",
-      "patterns": [{ "include": "source.ts" }]
+      "patterns": [
+        { "include": "#embedded-ts-balanced" }
+      ]
     },
-    "directives": {
+    "embedded-ts-balanced": {
+      "comment": "TypeScript expression content inside ${...}. Nested braces (object literals, blocks) are matched so the interpolation's own closing brace isn't mistaken for the expression's.",
       "patterns": [
         {
-          "comment": "Structural directives :if / :elif / :else / :for.",
-          "match": "(?<=\\s)(:)(if|elif|else|for)\\b",
+          "begin": "\\{",
+          "beginCaptures": { "0": { "name": "punctuation.definition.block.ts" } },
+          "end": "\\}",
+          "endCaptures": { "0": { "name": "punctuation.definition.block.ts" } },
+          "patterns": [{ "include": "#embedded-ts-balanced" }]
+        },
+        { "include": "source.ts" }
+      ]
+    },
+    "tag-open": {
+      "comment": "An opening tag's full '<Name ...>' / '<Name .../>' span, owned by the Lunas grammar (not delegated to text.html.basic) so directive attributes (:if=, ::two-way=, @event=) are classified before the embedded HTML grammar's generic attribute rules would otherwise claim them. Closing tags, text, and comments still fall through to text.html.basic.",
+      "begin": "(<)(?:([A-Z][\\w.]*)|([a-z][\\w.-]*))",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.lunas" },
+        "2": { "name": "support.class.component.lunas entity.name.tag.lunas" },
+        "3": { "name": "entity.name.tag.lunas" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.lunas" }
+      },
+      "name": "meta.tag.open.lunas",
+      "patterns": [
+        { "include": "#directive-attributes" },
+        { "include": "#plain-attribute" }
+      ]
+    },
+    "plain-attribute": {
+      "comment": "Ordinary (non-directive) HTML/component attribute: name, optional =\"value\" with ${...} interpolation support inside the value.",
+      "patterns": [
+        {
+          "begin": "([\\w-]+)(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.lunas" },
+            "2": { "name": "punctuation.separator.key-value.lunas" },
+            "3": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "string.quoted.double.lunas",
+          "patterns": [{ "include": "#interpolation" }]
+        },
+        {
+          "begin": "([\\w-]+)(=)(')",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.lunas" },
+            "2": { "name": "punctuation.separator.key-value.lunas" },
+            "3": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(')",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "string.quoted.single.lunas",
+          "patterns": [{ "include": "#interpolation" }]
+        },
+        {
+          "match": "[\\w-]+",
+          "name": "entity.other.attribute-name.lunas"
+        }
+      ]
+    },
+    "directive-attributes": {
+      "comment": "Lunas template binding attributes: structural directives (:if/:elseif/:else/:for), two-way bindings (::name=), attribute bindings (:name=) and event handlers (@event=). Scanned inside #tag-open, before the generic #plain-attribute fallback.",
+      "patterns": [
+        {
+          "comment": "Value-less structural directive: :else (no =\"...\").",
+          "match": "(:)(else)\\b(?!\\s*=)",
           "captures": {
             "1": { "name": "punctuation.definition.directive.lunas" },
             "2": { "name": "keyword.control.directive.lunas" }
           }
         },
         {
-          "comment": "Attribute binding :name= .",
-          "match": "(?<=\\s)(:)([\\w-]+)(?=\\s*=)",
-          "captures": {
+          "comment": "Structural directives :if / :elseif / :for with a JS expression value.",
+          "begin": "(:)(if|elseif|for)(=)(\")",
+          "beginCaptures": {
             "1": { "name": "punctuation.definition.directive.lunas" },
-            "2": { "name": "entity.other.attribute-name.binding.lunas" }
-          }
+            "2": { "name": "keyword.control.directive.lunas" },
+            "3": { "name": "punctuation.separator.key-value.lunas" },
+            "4": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "meta.directive.control-flow.lunas string.quoted.double.lunas",
+          "contentName": "meta.embedded.expression.lunas",
+          "patterns": [{ "include": "source.ts" }]
         },
         {
-          "comment": "Event handler @event= .",
-          "match": "(?<=\\s)(@)([\\w-]+)(?=\\s*=)",
-          "captures": {
+          "comment": "Two-way binding ::name=\"lvalue\".",
+          "begin": "(::)([\\w-]+)(=)(\")",
+          "beginCaptures": {
             "1": { "name": "punctuation.definition.directive.lunas" },
-            "2": { "name": "entity.other.attribute-name.event.lunas" }
-          }
+            "2": { "name": "entity.other.attribute-name.two-way.lunas" },
+            "3": { "name": "punctuation.separator.key-value.lunas" },
+            "4": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "meta.directive.two-way.lunas string.quoted.double.lunas",
+          "contentName": "meta.embedded.expression.lunas",
+          "patterns": [{ "include": "source.ts" }]
+        },
+        {
+          "comment": "Attribute binding :name=\"expr\" (includes :key, :is, :class, :style, etc).",
+          "begin": "(:)([\\w-]+)(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.directive.lunas" },
+            "2": { "name": "entity.other.attribute-name.binding.lunas" },
+            "3": { "name": "punctuation.separator.key-value.lunas" },
+            "4": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "meta.directive.binding.lunas string.quoted.double.lunas",
+          "contentName": "meta.embedded.expression.lunas",
+          "patterns": [{ "include": "source.ts" }]
+        },
+        {
+          "comment": "Event handler @event=\"handler\".",
+          "begin": "(@)([\\w-]+)(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.directive.lunas" },
+            "2": { "name": "entity.other.attribute-name.event.lunas" },
+            "3": { "name": "punctuation.separator.key-value.lunas" },
+            "4": { "name": "punctuation.definition.string.begin.lunas" }
+          },
+          "end": "(\")",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.string.end.lunas" }
+          },
+          "name": "meta.directive.event.lunas string.quoted.double.lunas",
+          "contentName": "meta.embedded.expression.lunas",
+          "patterns": [{ "include": "source.ts" }]
         }
       ]
+    },
+    "component-tag-close": {
+      "comment": "Closing tag of a component usage, e.g. </Card>. Handled separately from #tag-open (which only matches opening tags) so text.html.basic doesn't flag capitalized custom elements as invalid/unrecognized.",
+      "match": "(</)([A-Z][\\w.]*)([ \\t]*)(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.begin.lunas" },
+        "2": { "name": "support.class.component.lunas entity.name.tag.lunas" },
+        "4": { "name": "punctuation.definition.tag.end.lunas" }
+      }
     }
   }
 }
