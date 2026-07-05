@@ -18,3 +18,6 @@ packages/vscode/syntaxes/
 # Logs & OS cruft
 *.log
 .DS_Store
+
+# Background subagent worktrees
+.claude/worktrees/
