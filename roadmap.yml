@@ -69,11 +69,11 @@ milestones:
         status: done
       - id: ls-hover-defs
         title: Hover / go-to-definition / references / highlight / rename
-        status: in_progress
+        status: done
         # Implemented in TS (packages/language-server/src/navigation.ts) over the
-        # new `analyze` seam. Flips to done once the lunas-side `analyze` binding
-        # lands (lunasrun/lunas#179) and external/lunas is bumped to it; until
-        # then the analyzer isn't wired and these requests resolve empty.
+        # `analyze` seam, now wired: lunasrun/lunas#179 landed the `analyze`
+        # binding and external/lunas is bumped to lunas main, so the real
+        # compiler backs these features.
       - id: ls-semantic-tokens
         title: Semantic tokens for .lunas blocks
         status: todo
