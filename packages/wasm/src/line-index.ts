@@ -110,4 +110,30 @@ export class LineIndex {
       end: this.positionAt(endByte),
     };
   }
+
+  /**
+   * Convert a UTF-16 code-unit offset into a line/character position.
+   *
+   * The LSP already addresses text in UTF-16 units, so consumers that scan the
+   * source string directly (rather than the compiler's byte offsets) work in
+   * this unit. Out-of-range offsets are clamped; an offset that lands inside a
+   * surrogate pair snaps to that code point's start.
+   */
+  positionU16At(u16Offset: number): Position {
+    const total = this.u16Offsets[this.u16Offsets.length - 1];
+    const clamped = Math.max(0, Math.min(u16Offset, total));
+
+    // Largest index whose UTF-16 offset is <= the target.
+    let lo = 0;
+    let hi = this.u16Offsets.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (this.u16Offsets[mid] <= clamped) lo = mid;
+      else hi = mid - 1;
+    }
+
+    const line = this.lineOf[lo];
+    const character = this.u16Offsets[lo] - this.lineStartU16[line];
+    return { line, character };
+  }
 }

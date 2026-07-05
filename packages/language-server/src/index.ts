@@ -12,3 +12,19 @@ export {
   toLspSeverity,
   DIAGNOSTIC_SOURCE,
 } from "./diagnostics.js";
+export {
+  scanStructure,
+  findInterpolations,
+} from "./scanner.js";
+export type {
+  Structure,
+  Block,
+  BlockKind,
+  Interpolation,
+  Span,
+} from "./scanner.js";
+export {
+  documentSymbols,
+  foldingRanges,
+  selectionRangeAt,
+} from "./structure.js";
