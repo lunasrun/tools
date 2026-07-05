@@ -62,7 +62,7 @@ function fakeCompile(source) {
 }
 
 const OPEN_URI = "file:///test.lunas";
-const OPEN_TEXT = "script:\n  let x = 1\nhtml:\n  <p>{ bad }</p>\nstyle:\n  p {}";
+const OPEN_TEXT = "script:\n  let x = 1\nhtml:\n  <p>${ bad }</p>\nstyle:\n  p {}";
 
 async function initialize(client) {
   return client.sendRequest(InitializeRequest.type, {
@@ -108,10 +108,10 @@ test("didOpen publishes diagnostics with mapped ranges", async () => {
     const [diag] = params.diagnostics;
     assert.equal(diag.severity, 1); // Error
     assert.equal(diag.source, "lunas");
-    // `bad` sits on line 3 (0-based) at column 7: "  <p>{ bad }".
+    // `bad` sits on line 3 (0-based) at column 8: "  <p>${ bad }".
     assert.deepEqual(diag.range, {
-      start: { line: 3, character: 7 },
-      end: { line: 3, character: 10 },
+      start: { line: 3, character: 8 },
+      end: { line: 3, character: 11 },
     });
   } finally {
     dispose();

@@ -8,7 +8,7 @@ import {
   selectionRangeAt,
 } from "../dist/structure.js";
 
-const SRC = ["script:", "  let name = 'x'", "html:", "  <p>{ name }</p>", "style:", "  p { color: red }"].join(
+const SRC = ["script:", "  let name = 'x'", "html:", "  <p>${ name }</p>", "style:", "  p { color: red }"].join(
   "\n",
 );
 
@@ -28,7 +28,7 @@ test("documentSymbol nests interpolations under their block", () => {
   const html = symbols.find((s) => s.name === "html");
   assert.ok(html.children);
   assert.equal(html.children.length, 1);
-  assert.match(html.children[0].name, /\{ … \}/);
+  assert.match(html.children[0].name, /\$\{ … \}/);
   // The interpolation range sits on the html body line (line index 3).
   assert.equal(html.children[0].range.start.line, 3);
 });
@@ -63,8 +63,8 @@ test("foldingRange omits single-line blocks", () => {
 });
 
 test("selectionRange widens: interpolation inner -> interp -> body -> block", () => {
-  // Position on `name` inside `{ name }` on line 3.
-  const line = "  <p>{ name }</p>";
+  // Position on `name` inside `${ name }` on line 3.
+  const line = "  <p>${ name }</p>";
   const character = line.indexOf("name") + 1;
   const range = selectionRangeAt(SRC, { line: 3, character });
 
@@ -91,7 +91,7 @@ test("selectionRange outside any block returns a degenerate range", () => {
 });
 
 test("selectionRange parents strictly enclose children", () => {
-  const character = "  <p>{ name }</p>".indexOf("name") + 1;
+  const character = "  <p>${ name }</p>".indexOf("name") + 1;
   let cur = selectionRangeAt(SRC, { line: 3, character });
   while (cur.parent) {
     const child = cur.range;

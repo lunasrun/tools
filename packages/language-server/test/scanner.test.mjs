@@ -75,64 +75,71 @@ test("a label needs the colon and nothing else on the line", () => {
 });
 
 test("CRLF line endings are handled", () => {
-  const src = "html:\r\n  <p>{ name }</p>\r\nstyle:\r\n  p{}\r\n";
+  const src = "html:\r\n  <p>${ name }</p>\r\nstyle:\r\n  p{}\r\n";
   const { blocks } = scanStructure(src);
   assert.equal(blocks.length, 2);
   assert.equal(blocks[0].kind, "html");
   const [interp] = blocks[0].interpolations;
-  assert.equal(slice(src, interp), "{ name }");
+  assert.equal(slice(src, interp), "${ name }");
 });
 
 test("multibyte characters keep spans in UTF-16 units", () => {
   // 'あ' is one UTF-16 unit; an emoji is a surrogate pair (two units).
-  const src = "html:\n  <p>あ{ 名前 }😀</p>";
+  const src = "html:\n  <p>あ${ 名前 }😀</p>";
   const { blocks } = scanStructure(src);
   const [interp] = blocks[0].interpolations;
-  assert.equal(slice(src, interp), "{ 名前 }");
+  assert.equal(slice(src, interp), "${ 名前 }");
 });
 
-test("interpolations: simple braces", () => {
-  const found = findInterpolations("a { x } b { y } c", 0, 17);
+test("interpolations: simple ${…}", () => {
+  const src = "a ${ x } b ${ y } c";
+  const found = findInterpolations(src, 0, src.length);
   assert.equal(found.length, 2);
-  assert.equal("a { x } b { y } c".slice(found[0].start, found[0].end), "{ x }");
-  assert.equal("a { x } b { y } c".slice(found[1].start, found[1].end), "{ y }");
+  assert.equal(src.slice(found[0].start, found[0].end), "${ x }");
+  assert.equal(src.slice(found[1].start, found[1].end), "${ y }");
 });
 
 test("interpolations: nested braces are a single interpolation", () => {
-  const src = "{ a.map(x => ({ id: x })) }";
+  const src = "${ a.map(x => ({ id: x })) }";
   const found = findInterpolations(src, 0, src.length);
   assert.equal(found.length, 1);
   assert.equal(src.slice(found[0].start, found[0].end), src);
   assert.equal(src.slice(found[0].inner.start, found[0].inner.end), " a.map(x => ({ id: x })) ");
 });
 
-test("interpolations: unterminated brace runs to end of range without throwing", () => {
-  const src = "text { unclosed";
+test("a bare `{` without `$` is not an interpolation", () => {
+  // Object literals / CSS braces must not be mistaken for interpolations.
+  const found = findInterpolations("p { color: red }", 0, 16);
+  assert.equal(found.length, 0);
+});
+
+test("interpolations: unterminated ${ runs to end of range without throwing", () => {
+  const src = "text ${ unclosed";
   const found = findInterpolations(src, 0, src.length);
   assert.equal(found.length, 1);
   assert.equal(found[0].end, src.length);
   assert.equal(src.slice(found[0].inner.start, found[0].inner.end), " unclosed");
 });
 
-test("inner span excludes the braces", () => {
-  const src = "html:\n  <p>{ name }</p>";
+test("inner span excludes the ${ and }", () => {
+  const src = "html:\n  <p>${ name }</p>";
   const { blocks } = scanStructure(src);
   const [interp] = blocks[0].interpolations;
   assert.equal(src.slice(interp.inner.start, interp.inner.end), " name ");
 });
 
 test("interpolations only scanned within a block body", () => {
-  // The `{ ignored }` at column 0 is outside any block body.
-  const src = "{ ignored }\nhtml:\n  { kept }";
+  // The `${ ignored }` at column 0 is outside any block body.
+  const src = "${ ignored }\nhtml:\n  ${ kept }";
   const { blocks } = scanStructure(src);
   assert.equal(blocks.length, 1);
   assert.equal(blocks[0].interpolations.length, 1);
-  assert.equal(src.slice(blocks[0].interpolations[0].start, blocks[0].interpolations[0].end), "{ kept }");
+  assert.equal(src.slice(blocks[0].interpolations[0].start, blocks[0].interpolations[0].end), "${ kept }");
 });
 
 test("final line without a trailing newline is still part of the body", () => {
-  const src = "html:\n  <p>{ x }</p>"; // no trailing \n
+  const src = "html:\n  <p>${ x }</p>"; // no trailing \n
   const { blocks } = scanStructure(src);
   assert.equal(blocks[0].interpolations.length, 1);
-  assert.match(slice(src, blocks[0].bodySpan), /<p>\{ x \}<\/p>$/);
+  assert.match(slice(src, blocks[0].bodySpan), /<p>\$\{ x \}<\/p>$/);
 });

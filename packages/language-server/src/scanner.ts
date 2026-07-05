@@ -5,7 +5,7 @@
  *
  * - top-level blocks introduced by a `html:`, `style:` or `script:` label at
  *   column 0, whose body is the following more-indented (or blank) lines, and
- * - `{ … }` interpolations inside those blocks (with brace nesting).
+ * - `${ … }` interpolations inside those blocks (with brace nesting).
  *
  * Everything is reported in **UTF-16 code-unit offsets** into the source (the
  * unit editors and `LineIndex` use for character columns), so ranges map
@@ -34,9 +34,9 @@ export interface Span {
   end: number;
 }
 
-/** A `{ … }` interpolation found inside a block body. */
+/** A `${ … }` interpolation found inside a block body. */
 export interface Interpolation extends Span {
-  /** Span of the text between the braces (exclusive of `{` and `}`). */
+  /** Span of the text between the braces (exclusive of `${` and `}`). */
   inner: Span;
 }
 
@@ -144,8 +144,8 @@ function matchLabel(
 }
 
 /**
- * Find `{ … }` interpolations within `[start, end)` of `source`, tracking brace
- * nesting so `{ a.map(x => ({ x })) }` is a single interpolation. Unterminated
+ * Find `${ … }` interpolations within `[start, end)` of `source`, tracking brace
+ * nesting so `${ a.map(x => ({ x })) }` is a single interpolation. Unterminated
  * interpolations are reported through end-of-range (never dropped, never
  * thrown). String and comment awareness is deliberately out of scope: this is a
  * structural aid, not a JS parser.
@@ -158,10 +158,15 @@ export function findInterpolations(
   const result: Interpolation[] = [];
   let i = start;
   while (i < end) {
-    if (source.charCodeAt(i) === 0x7b /* { */) {
-      const open = i;
+    // An interpolation opens with `${` — a `$` immediately followed by `{`.
+    if (
+      source.charCodeAt(i) === 0x24 /* $ */ &&
+      i + 1 < end &&
+      source.charCodeAt(i + 1) === 0x7b /* { */
+    ) {
+      const open = i; // the `$`
       let depth = 1;
-      let j = i + 1;
+      let j = i + 2; // scan the body after `${`
       while (j < end && depth > 0) {
         const c = source.charCodeAt(j);
         if (c === 0x7b) depth++;
@@ -174,7 +179,7 @@ export function findInterpolations(
       result.push({
         start: open,
         end: closed ? j : end,
-        inner: { start: open + 1, end: innerEnd },
+        inner: { start: open + 2, end: innerEnd },
       });
       i = j;
     } else {
