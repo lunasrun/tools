@@ -32,3 +32,31 @@ export interface CompileResult {
  * never need the real wasm binary.
  */
 export type Compile = (source: string) => CompileResult;
+
+/**
+ * One named symbol occurrence with a UTF-8 byte range into the source: either a
+ * binding declaration or an identifier reference.
+ */
+export interface SymbolOccurrence {
+  name: string;
+  /** Inclusive start, as a UTF-8 byte offset. */
+  start: number;
+  /** Exclusive end, as a UTF-8 byte offset. */
+  end: number;
+}
+
+/**
+ * The navigation view of a `.lunas` source, mirroring the `lunas_wasm` `analyze`
+ * binding: `script:` binding declarations and the identifier uses in template
+ * expressions. A reference is a use of a binding when their `name`s match.
+ */
+export interface AnalyzeResult {
+  bindings: SymbolOccurrence[];
+  references: SymbolOccurrence[];
+}
+
+/**
+ * A synchronous analyze function — the navigation counterpart to {@link Compile}.
+ * Tests inject a fake implementing this signature.
+ */
+export type Analyze = (source: string) => AnalyzeResult;
