@@ -68,13 +68,12 @@ milestones:
         title: documentSymbol / foldingRange / selectionRange (TS block scanner)
         status: done
       - id: ls-hover-defs
-        title: Hover / go-to-definition / references (uses analysis APIs)
-        status: todo
-        # Blocked on lunas-side parser exposure. The current @lunas-tools/wasm
-        # `compile(source) => { code, diagnostics }` seam yields no AST, symbol
-        # table, or binding spans, so semantic hover/def/refs cannot be done
-        # acceptably in TS. Needs Lunas to expose a parse/analyze API (AST +
-        # resolved bindings with source spans) through the wasm boundary.
+        title: Hover / go-to-definition / references / highlight / rename
+        status: done
+        # Implemented in TS (packages/language-server/src/navigation.ts) over the
+        # `analyze` seam, now wired: lunasrun/lunas#179 landed the `analyze`
+        # binding and external/lunas is bumped to lunas main, so the real
+        # compiler backs these features.
       - id: ls-semantic-tokens
         title: Semantic tokens for .lunas blocks
         status: todo

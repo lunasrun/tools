@@ -1,7 +1,12 @@
 import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Compile, CompileResult } from "./types.js";
+import type {
+  Analyze,
+  AnalyzeResult,
+  Compile,
+  CompileResult,
+} from "./types.js";
 
 /**
  * Location of the wasm-pack `nodejs` bindings, relative to the built package.
@@ -29,7 +34,13 @@ export function isCompilerAvailable(): boolean {
  * this is the single place that knows how the compiler is supplied, so
  * switching to a published npm package later changes only this function.
  */
-export function loadCompiler(): Compile {
+/** The subset of the wasm-pack `nodejs` module this package consumes. */
+interface Bindings {
+  compile(source: string): CompileResult;
+  analyze(source: string): AnalyzeResult;
+}
+
+function requireBindings(): Bindings {
   if (!isCompilerAvailable()) {
     throw new Error(
       "Lunas compiler bindings not found. Run `pnpm wasm:build` to build them " +
@@ -37,8 +48,20 @@ export function loadCompiler(): Compile {
     );
   }
   const require = createRequire(import.meta.url);
-  const mod = require(fileURLToPath(NODE_BINDINGS)) as {
-    compile(source: string): CompileResult;
-  };
-  return (source: string) => mod.compile(source);
+  return require(fileURLToPath(NODE_BINDINGS)) as Bindings;
+}
+
+export function loadCompiler(): Compile {
+  const bindings = requireBindings();
+  return (source: string) => bindings.compile(source);
+}
+
+/**
+ * Load the real Lunas analyzer (Node target) — the navigation counterpart to
+ * {@link loadCompiler}, backed by the same bindings. Throws the same actionable
+ * error when the bindings have not been built.
+ */
+export function loadAnalyzer(): Analyze {
+  const bindings = requireBindings();
+  return (source: string) => bindings.analyze(source);
 }
