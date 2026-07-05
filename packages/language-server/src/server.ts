@@ -5,13 +5,20 @@ import {
   type InitializeResult,
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import type { Compile } from "@lunas-tools/wasm";
+import type { Analyze, Compile } from "@lunas-tools/wasm";
 import { toLspDiagnostics } from "./diagnostics.js";
 import {
   documentSymbols,
   foldingRanges,
   selectionRangeAt,
 } from "./structure.js";
+import {
+  definitionAt,
+  referencesAt,
+  highlightsAt,
+  renameEdits,
+  hoverAt,
+} from "./navigation.js";
 
 /**
  * Supplies the compiler lazily. Returns `null` when no compiler is available
@@ -21,18 +28,26 @@ import {
 export type CompileProvider = () => Compile | null;
 
 /**
+ * Supplies the analyzer lazily. Returns `null` when navigation data isn't
+ * available (no analyzer wired), in which case navigation requests resolve empty
+ * while diagnostics and the structural features keep working.
+ */
+export type AnalyzeProvider = () => Analyze | null;
+
+/**
  * Wire the transport-agnostic Lunas language server onto a connection.
  *
  * The connection (stdio in Node, a web worker in the browser) and the compiler
  * are both injected, which keeps this core testable and shared across builds.
  *
- * Diagnostics need the compiler; the structural features (document symbols,
- * folding, selection ranges) are derived from a pure TS-side scan of the
- * `.lunas` source and therefore work even when no compiler is available.
+ * Diagnostics need the compiler and navigation needs the analyzer; the
+ * structural features (document symbols, folding, selection ranges) are derived
+ * from a pure TS-side scan and work even when neither is available.
  */
 export function createServer(
   connection: Connection,
   getCompile: CompileProvider,
+  getAnalyze: AnalyzeProvider = () => null,
 ): void {
   const documents = new TextDocuments(TextDocument);
 
@@ -43,9 +58,29 @@ export function createServer(
         documentSymbolProvider: true,
         foldingRangeProvider: true,
         selectionRangeProvider: true,
+        definitionProvider: true,
+        referencesProvider: true,
+        documentHighlightProvider: true,
+        renameProvider: true,
+        hoverProvider: true,
       },
     }),
   );
+
+  /**
+   * Analyze a document, or `null` when no analyzer is wired or analysis throws.
+   * Navigation handlers use this and resolve empty when it returns `null`.
+   */
+  const analyzeDoc = (document: TextDocument) => {
+    const analyze = getAnalyze();
+    if (!analyze) return null;
+    try {
+      return analyze(document.getText());
+    } catch (err) {
+      connection.console.error(`lunas analyze failed: ${String(err)}`);
+      return null;
+    }
+  };
 
   const validate = (document: TextDocument): void => {
     const compile = getCompile();
@@ -85,6 +120,63 @@ export function createServer(
     if (!document) return null;
     const text = document.getText();
     return params.positions.map((position) => selectionRangeAt(text, position));
+  });
+
+  connection.onDefinition((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+    const analysis = analyzeDoc(document);
+    if (!analysis) return null;
+    return definitionAt(
+      document.uri,
+      document.getText(),
+      analysis,
+      params.position,
+    );
+  });
+
+  connection.onReferences((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+    const analysis = analyzeDoc(document);
+    if (!analysis) return null;
+    return referencesAt(
+      document.uri,
+      document.getText(),
+      analysis,
+      params.position,
+      params.context.includeDeclaration,
+    );
+  });
+
+  connection.onDocumentHighlight((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+    const analysis = analyzeDoc(document);
+    if (!analysis) return null;
+    return highlightsAt(document.getText(), analysis, params.position);
+  });
+
+  connection.onRenameRequest((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+    const analysis = analyzeDoc(document);
+    if (!analysis) return null;
+    return renameEdits(
+      document.uri,
+      document.getText(),
+      analysis,
+      params.position,
+      params.newName,
+    );
+  });
+
+  connection.onHover((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+    const analysis = analyzeDoc(document);
+    if (!analysis) return null;
+    return hoverAt(document.getText(), analysis, params.position);
   });
 
   documents.listen(connection);

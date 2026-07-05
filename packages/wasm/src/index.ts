@@ -11,7 +11,14 @@ export type {
   Diagnostic,
   CompileResult,
   Compile,
+  SymbolOccurrence,
+  AnalyzeResult,
+  Analyze,
 } from "./types.js";
 export { LineIndex } from "./line-index.js";
 export type { Position, Range } from "./line-index.js";
-export { loadCompiler, isCompilerAvailable } from "./loader.js";
+export {
+  loadCompiler,
+  loadAnalyzer,
+  isCompilerAvailable,
+} from "./loader.js";

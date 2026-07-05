@@ -6,12 +6,19 @@
  * or tested directly.
  */
 export { createServer } from "./server.js";
-export type { CompileProvider } from "./server.js";
+export type { CompileProvider, AnalyzeProvider } from "./server.js";
 export {
   toLspDiagnostics,
   toLspSeverity,
   DIAGNOSTIC_SOURCE,
 } from "./diagnostics.js";
+export {
+  definitionAt,
+  referencesAt,
+  highlightsAt,
+  renameEdits,
+  hoverAt,
+} from "./navigation.js";
 export {
   scanStructure,
   findInterpolations,
