@@ -79,5 +79,10 @@ jobs:
       - name: Build wasm bindings
         run: pnpm wasm:build
 
+      # The integration test imports the package's compiled dist/, so build the
+      # TypeScript before running it (this job doesn't run the workspace build).
+      - name: Build @lunas-tools/wasm
+        run: pnpm --filter @lunas-tools/wasm run build
+
       - name: Integration test (real compiler)
         run: pnpm --filter @lunas-tools/wasm run test
