@@ -3,17 +3,12 @@ node_modules/
 
 # Build output
 dist/
-out/
 *.tsbuildinfo
 
-# wasm-pack generated bindings (rebuilt from the external/lunas submodule)
-packages/wasm/generated/
-
-# VS Code extension grammar assets (synced from @lunas-tools/grammar at build)
-packages/vscode/syntaxes/
-
-# VS Code extension packages
-*.vsix
+# Lunas compiler bindings, rebuilt from the external/lunas submodule
+# (pnpm wasm:build). Node target drives the Vite build; web target runs in the
+# browser playground.
+wasm/
 
 # Logs & OS cruft
 *.log
