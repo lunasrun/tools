@@ -1,8 +1,15 @@
-# lunas-playground
+# lunas-tools
 
-The in-browser editor & live preview for [Lunas](https://github.com/lunasrun/lunas)
-`.lunas` single-file components — **built with Lunas itself**. The playground UI
-is authored in `.lunas` and compiled by the real Lunas compiler.
+Editor & build tooling for the [Lunas](https://github.com/lunasrun/lunas) web
+framework, developed as a single pnpm workspace.
+
+| package | what it is |
+|---|---|
+| [`@lunas-tools/wasm`](packages/wasm) | the compiler seam — wraps the Rust `lunas_wasm` bindings behind a stable JS API (`compile`, diagnostics, `LineIndex`). The only package that touches the compiler. |
+| [`@lunas-tools/grammar`](packages/grammar) | TextMate grammar + language configuration for `.lunas` files (syntax highlighting). |
+| [`lunas-ls`](packages/language-server) | the Lunas language server (LSP), for both Node (stdio) and the browser (web worker). |
+| [`lunas-tsc`](packages/tsc) | CLI diagnostics / type-checker for `.lunas` files. |
+| [`lunas-vscode`](packages/vscode) | the VS Code extension (desktop + web). |
 
 ## Getting started
 
@@ -12,34 +19,17 @@ corepack enable
 git submodule update --init --recursive   # vendors external/lunas
 pnpm install
 pnpm wasm:build                            # build the compiler bindings once
-pnpm dev                                   # start the playground
+pnpm -r build && pnpm -r test
 ```
 
-Quality gate:
-
-```sh
-pnpm build && pnpm typecheck && pnpm test
-```
-
-## How it consumes Lunas
-
-Lunas is not published to npm yet, so the framework is vendored as a git
-submodule at `external/lunas` and consumed from there:
-
-- `package.json` depends on `lunas` (runtime) and `vite-plugin-lunas` (the Vite
-  plugin that compiles `.lunas`) via the `file:` protocol into the submodule.
-- `pnpm wasm:build` runs `wasm-pack` on `external/lunas/crates/lunas_wasm` into
-  `wasm/{node,web}` — the `node` target drives the Vite build, the `web` target
-  runs the compiler in the browser.
-
-When Lunas publishes to npm, the two `file:` deps swap for pinned npm versions
-and the local wasm build goes away — see [`CLAUDE.md`](CLAUDE.md) for the
-compiler-seam design, rules, and workflow.
+The Rust compiler lives in the sibling `lunasrun/lunas` repo and is vendored as
+a git submodule at `external/lunas`. See [`CLAUDE.md`](CLAUDE.md) for the
+compiler-seam design and the development workflow.
 
 ## Status
 
-Scaffolded: a single Vite app compiling `.lunas` end-to-end. Feature work is
-tracked in [`roadmap.yml`](roadmap.yml).
+Bootstrapping. Package skeletons and CI are in place; feature work is tracked in
+[`roadmap.yml`](roadmap.yml).
 
 ## License
 

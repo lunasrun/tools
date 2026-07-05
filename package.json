@@ -1,33 +1,25 @@
 {
-  "name": "lunas-playground",
+  "name": "lunas-tools",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
-  "description": "The Lunas playground — an in-browser editor & live preview for .lunas single-file components, built with Lunas itself.",
+  "description": "Editor & build tooling for the Lunas web framework: type-checker (lunas-tsc), language server (lunas-ls), VS Code extension, and syntax grammar.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lunasrun/tools.git"
+    "url": "https://github.com/lunasrun/tools.git"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "wasm:build": "node scripts/build-wasm.mjs",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test \"test/**/*.test.mjs\""
-  },
-  "dependencies": {
-    "lunas": "file:external/lunas/packages/lunas"
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "wasm:build": "pnpm --filter @lunas-tools/wasm run build:wasm"
   },
   "devDependencies": {
-    "@types/node": "^20.19.0",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.0",
-    "vite-plugin-lunas": "file:external/lunas/packages/vite-plugin-lunas"
+    "typescript": "^5.6.3"
   }
 }
