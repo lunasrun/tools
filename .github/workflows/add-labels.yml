@@ -43,5 +43,11 @@ jobs:
           esac
 
           if [[ -n "$LABEL" ]]; then
-            gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$LABEL"
+            # Self-healing: if the label doesn't exist yet, create it and retry
+            # so a missing label never fails the workflow.
+            if ! gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$LABEL"; then
+              echo "Label '$LABEL' missing; creating it and retrying."
+              gh label create "$LABEL" --repo "$GITHUB_REPOSITORY" --force >/dev/null 2>&1 || true
+              gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$LABEL" || true
+            fi
           fi
