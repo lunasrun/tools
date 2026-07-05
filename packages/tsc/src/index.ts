@@ -10,3 +10,12 @@ export {
 } from "./check.js";
 export type { LocatedDiagnostic, CheckSummary } from "./check.js";
 export { findLunasFiles } from "./find-files.js";
+export { runCheck, summaryLine } from "./run.js";
+export type { CheckRun } from "./run.js";
+export { startWatch, fsWatchFactory } from "./watch.js";
+export type {
+  WatchSession,
+  WatchOptions,
+  WatchFactory,
+  Watcher,
+} from "./watch.js";

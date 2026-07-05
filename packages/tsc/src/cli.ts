@@ -1,13 +1,8 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { loadCompiler, isCompilerAvailable } from "@lunas-tools/wasm";
-import {
-  checkSource,
-  formatDiagnostic,
-  summarize,
-  exitCode,
-} from "./check.js";
-import { findLunasFiles } from "./find-files.js";
+import { runCheck } from "./run.js";
+import { startWatch } from "./watch.js";
 
 const HELP = `lunas-tsc — type-check / diagnose .lunas files
 
@@ -15,6 +10,7 @@ Usage:
   lunas-tsc [paths...]      Check the given files/directories (default: ".")
 
 Options:
+  -w, --watch              Re-check on file changes (runs until interrupted)
   -h, --help               Show this help
   -v, --version            Show the version
 
@@ -31,7 +27,7 @@ function version(): string {
   return pkg.version;
 }
 
-function main(argv: string[]): number {
+function main(argv: string[]): number | null {
   const args = argv.slice(2);
   if (args.includes("-h") || args.includes("--help")) {
     process.stdout.write(HELP);
@@ -42,19 +38,17 @@ function main(argv: string[]): number {
     return 0;
   }
 
-  const unknownFlag = args.find((a) => a.startsWith("-"));
+  const watch = args.includes("-w") || args.includes("--watch");
+  const positional = args.filter((a) => !a.startsWith("-"));
+  const unknownFlag = args.find(
+    (a) => a.startsWith("-") && !["-w", "--watch"].includes(a),
+  );
   if (unknownFlag) {
     process.stderr.write(`Unknown option: ${unknownFlag}\n\n${HELP}`);
     return 2;
   }
 
-  const inputs = args.length > 0 ? args : ["."];
-  const files = findLunasFiles(inputs);
-
-  if (files.length === 0) {
-    process.stdout.write("No .lunas files found.\n");
-    return 0;
-  }
+  const inputs = positional.length > 0 ? positional : ["."];
 
   if (!isCompilerAvailable()) {
     process.stderr.write(
@@ -62,22 +56,28 @@ function main(argv: string[]): number {
     );
     return 2;
   }
-
   const compile = loadCompiler();
-  const all = [];
-  for (const file of files) {
-    const source = readFileSync(file, "utf8");
-    const diagnostics = checkSource(compile, file, source);
-    for (const d of diagnostics) process.stdout.write(`${formatDiagnostic(d)}\n`);
-    all.push(...diagnostics);
+
+  if (watch) {
+    process.stdout.write("lunas-tsc: watching for changes (Ctrl-C to stop)…\n");
+    const session = startWatch(compile, inputs, (text) =>
+      process.stdout.write(text),
+    );
+    process.on("SIGINT", () => {
+      session.close();
+      process.exit(0);
+    });
+    return null; // keep the process alive; exit is driven by SIGINT
   }
 
-  const summary = summarize(all, files.length);
-  process.stdout.write(
-    `\nChecked ${summary.files} file(s): ${summary.errors} error(s), ` +
-      `${summary.warnings} warning(s), ${summary.hints} hint(s).\n`,
-  );
-  return exitCode(summary);
+  const run = runCheck(compile, inputs);
+  if (run.files.length === 0) {
+    process.stdout.write("No .lunas files found.\n");
+    return 0;
+  }
+  process.stdout.write(`${run.lines.join("\n")}\n`);
+  return run.code;
 }
 
-process.exit(main(process.argv));
+const code = main(process.argv);
+if (code !== null) process.exit(code);
