@@ -1,109 +1,63 @@
-# lunas-tools roadmap — single source of truth.
+# lunas-playground roadmap — single source of truth.
 #
 # Statuses: done | in_progress | todo | deferred
-# Respect dependency order: compiler seam -> grammar -> language server / tsc
-# -> vscode. Each item is completed by a PR that also flips its status to
-# `done` (touch only your own item lines).
+# Respect dependency order: scaffold -> playground UI -> editor/LSP -> deploy.
+# Each item is completed by a PR that also flips its status to `done` (touch
+# only your own item lines).
 
 meta:
   updated: 2026-07-05
   extension: ".lunas"
 
 milestones:
-  - id: foundation
-    title: Monorepo foundation
+  - id: scaffold
+    title: Lunas app scaffold
     items:
-      - id: monorepo-scaffold
-        title: pnpm workspace, tsconfig base, submodule external/lunas
-        status: done
+      - id: reset-to-lunas-app
+        title: Reset repo to a single Vite app; submodule external/lunas at codegen-complete main
+        status: in_progress
+      - id: consume-lunas
+        title: Consume lunas + vite-plugin-lunas via file: deps; wasm:build (node + web)
+        status: in_progress
       - id: ci-quality-gate
-        title: CI (build/typecheck/test + wasm build job)
-        status: done
+        title: CI builds wasm then build/typecheck/test; release-PR script test
+        status: in_progress
       - id: release-automation
         title: Auto release PR (main -> beta), PR labeling
         status: done
-
-  - id: compiler-seam
-    title: "@lunas-tools/wasm — the compiler boundary"
-    items:
-      - id: wasm-api
-        title: Stable JS API (compile) + diagnostic types
-        status: done
-      - id: line-index
-        title: LineIndex byte-offset -> line/column mapping (well-tested)
-        status: done
-      - id: wasm-build
-        title: wasm-pack build from submodule (node + web targets)
-        status: in_progress
       - id: npm-swap
-        title: Swap to published @lunas/wasm npm dep (post-publish)
+        title: Swap file: deps for published npm lunas packages (post-publish)
         status: deferred
 
-  - id: grammar
-    title: Syntax highlighting
+  - id: playground-ui
+    title: Playground UI in Lunas
     items:
-      - id: tmlanguage
-        title: TextMate grammar for .lunas (html/style/script blocks)
-        status: done
-      - id: language-configuration
-        title: Comments, brackets, auto-closing pairs
-        status: done
-      - id: grammar-embedded-langs
-        title: Embed TS/JS/CSS/HTML grammars in the right blocks
-        status: done
-
-  - id: language-server
-    title: lunas-ls
-    items:
-      - id: ls-diagnostics
-        title: Publish compiler diagnostics (offset -> LSP range)
-        status: done
-      - id: ls-node-entry
-        title: Node stdio entry
-        status: done
-      - id: ls-browser-entry
-        title: Browser web-worker entry
-        status: done
-      - id: ls-structural-features
-        title: documentSymbol / foldingRange / selectionRange (TS block scanner)
-        status: done
-      - id: ls-hover-defs
-        title: Hover / go-to-definition / references (uses analysis APIs)
+      - id: app-shell
+        title: Material-ish app shell (reference archived Vue playground), no heavy effects
         status: todo
-        # Blocked on lunas-side parser exposure. The current @lunas-tools/wasm
-        # `compile(source) => { code, diagnostics }` seam yields no AST, symbol
-        # table, or binding spans, so semantic hover/def/refs cannot be done
-        # acceptably in TS. Needs Lunas to expose a parse/analyze API (AST +
-        # resolved bindings with source spans) through the wasm boundary.
-      - id: ls-semantic-tokens
-        title: Semantic tokens for .lunas blocks
+      - id: multi-file
+        title: VS Code-like multi-file management (tree, tabs, add/rename/delete, persistence)
         status: todo
-        # Also blocked on lunas-side parser exposure: precise token
-        # classification for script/style/html interpolations needs the real
-        # tokenizer/AST, not the structural block scanner.
-
-  - id: tsc
-    title: lunas-tsc CLI
-    items:
-      - id: tsc-cli
-        title: Glob .lunas, compile, report diagnostics, exit code
-        status: in_progress
-      - id: tsc-watch
-        title: --watch mode
+      - id: live-compile
+        title: In-browser compile via web-target wasm worker + live preview
         status: todo
 
-  - id: vscode
-    title: lunas-vscode extension
+  - id: editor-lsp
+    title: Editor + language server
     items:
-      - id: vscode-language
-        title: Contribute .lunas language + grammar
-        status: in_progress
-      - id: vscode-client-node
-        title: Launch lunas-ls (desktop)
+      - id: monaco
+        title: Monaco editor integration
         status: todo
-      - id: vscode-client-web
-        title: Web extension host (browser)
+      - id: syntax-highlight
+        title: TextMate/shiki syntax highlighting for .lunas (restore grammar from history)
         status: todo
-      - id: vscode-publish
-        title: Package + publish to Marketplace / OpenVSX
-        status: deferred
+      - id: language-server
+        title: Wire Lunas LSP over a web worker (diagnostics, completion, hover, defs)
+        status: todo
+
+  - id: deploy
+    title: Deploy
+    items:
+      - id: gh-pages
+        title: GitHub Pages deploy on push to main (build incl. wasm, base path)
+        status: todo
