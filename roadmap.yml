@@ -87,10 +87,10 @@ milestones:
     items:
       - id: tsc-cli
         title: Glob .lunas, compile, report diagnostics, exit code
-        status: in_progress
+        status: done
       - id: tsc-watch
         title: --watch mode
-        status: todo
+        status: done
 
   - id: vscode
     title: lunas-vscode extension
