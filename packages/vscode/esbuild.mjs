@@ -20,6 +20,10 @@ const common = {
 await Promise.all([
   esbuild.build({
     ...common,
+    // `lunas-ls` is spawned as a separate Node process at runtime (its path
+    // is resolved via `require.resolve("lunas-ls/node")`), so it must not be
+    // inlined into extension.js.
+    external: [...common.external, "lunas-ls"],
     entryPoints: [src("extension.ts")],
     outfile: out("extension.js"),
     platform: "node",

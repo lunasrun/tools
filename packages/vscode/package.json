@@ -60,7 +60,9 @@
     "vscode:prepublish": "pnpm run build"
   },
   "dependencies": {
-    "@lunas-tools/grammar": "workspace:*"
+    "@lunas-tools/grammar": "workspace:*",
+    "lunas-ls": "workspace:*",
+    "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
     "@types/vscode": "^1.78.0",

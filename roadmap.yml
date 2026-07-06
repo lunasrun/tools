@@ -99,7 +99,7 @@ milestones:
         status: in_progress
       - id: vscode-client-node
         title: Launch lunas-ls (desktop)
-        status: todo
+        status: done
       - id: vscode-client-web
         title: Web extension host (browser)
         status: todo
