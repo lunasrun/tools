@@ -8,6 +8,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import type { Analyze, Compile } from "@lunas-tools/wasm";
 import { toLspDiagnostics } from "./diagnostics.js";
 import { semanticDiagnostics } from "./semantic-diagnostics.js";
+import { typeDiagnostics } from "./type-diagnostics.js";
 import {
   documentSymbols,
   foldingRanges,
@@ -112,6 +113,10 @@ export function createServer(
       if (analysis) {
         diagnostics.push(...semanticDiagnostics(text, analysis));
       }
+
+      // Real TypeScript type errors for the script + template expressions.
+      // Independent of the analyzer and never throws.
+      diagnostics.push(...typeDiagnostics(text));
 
       connection.sendDiagnostics({ uri: document.uri, diagnostics });
     } catch (err) {
