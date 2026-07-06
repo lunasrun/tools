@@ -92,22 +92,17 @@ test("hover range covers the symbol under the cursor", () => {
   assert.deepEqual(hoverAt(SRC, ANALYSIS, ON_REF).range, REF_RANGE);
 });
 
-// --- @input prop declarations (scanned from source, not from analyze) ---
+// --- @input props: now parser-backed (analyze reports the @input decl as a
+//     binding and the template use as a reference; navigation just projects). ---
 
-// `@input name` declares a prop; the template references it. analyze reports
-// only the reference (byte 33..37 in this source), never the @input decl.
 const INPUT_SRC = "@input name:string\nhtml:\n  <p>${ name }</p>";
 const INPUT_ANALYSIS = {
-  bindings: [],
-  references: [{ name: "name", start: 33, end: 37 }],
+  bindings: [{ name: "name", start: 7, end: 11 }], // the @input `name` token
+  references: [{ name: "name", start: 33, end: 37 }], // ${ name } in the template
 };
 const NAME_DECL_RANGE = {
   start: { line: 0, character: 7 },
   end: { line: 0, character: 11 },
-};
-const NAME_REF_RANGE = {
-  start: { line: 2, character: 8 },
-  end: { line: 2, character: 12 },
 };
 const ON_INPUT_REF = { line: 2, character: 9 };
 const ON_INPUT_DECL = { line: 0, character: 8 };
@@ -137,11 +132,17 @@ test("references/rename of an @input prop include the declaration and the use", 
   assert.ok(edit.changes[URI].every((e) => e.newText === "who"));
 });
 
-test("multiple @input props are each resolvable", () => {
-  const src = "@input a: number\n@input b: string?\nhtml:\n  <p/>";
-  const analysis = { bindings: [], references: [] };
-  const defA = definitionAt(URI, src, analysis, { line: 0, character: 7 });
-  const defB = definitionAt(URI, src, analysis, { line: 1, character: 7 });
-  assert.equal(defA[0].range.start.line, 0);
-  assert.equal(defB[0].range.start.line, 1);
+// --- @use components: jump from a <Foo/> usage to its @use declaration ---
+
+const USE_SRC = '@use Foo from "./Foo.lunas"\nhtml:\n  <Foo/>';
+const USE_ANALYSIS = {
+  bindings: [{ name: "Foo", start: 5, end: 8 }], // @use `Foo`
+  references: [{ name: "Foo", start: 37, end: 40 }], // <Foo/> tag name
+};
+
+test("definition from a <Component/> usage jumps to its @use declaration", () => {
+  const def = definitionAt(URI, USE_SRC, USE_ANALYSIS, { line: 2, character: 4 });
+  assert.deepEqual(def, [
+    { uri: URI, range: { start: { line: 0, character: 5 }, end: { line: 0, character: 8 } } },
+  ]);
 });

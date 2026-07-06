@@ -33,35 +33,15 @@ interface Occurrence {
   range: Range;
 }
 
-// A top-level `@input <name>` prop declaration, e.g. `@input name: string?`.
-// The `analyze` binding only reports `script:` bindings, so `@input` props —
-// which are declarations too, and are referenced from the template — are
-// scanned here so navigation can resolve them. Indices are UTF-16 (JS string
-// offsets), mapped with `positionU16At` rather than the byte-based `rangeAt`.
-const INPUT_DECL = /^[ \t]*@input[ \t]+([A-Za-z_$][\w$]*)/gm;
-
-/** Positioned declaration occurrences for every top-level `@input` prop. */
-function inputDeclarations(source: string, index: LineIndex): Occurrence[] {
-  const occ: Occurrence[] = [];
-  for (const m of source.matchAll(INPUT_DECL)) {
-    const name = m[1];
-    const start = (m.index ?? 0) + m[0].length - name.length;
-    occ.push({
-      name,
-      kind: "declaration",
-      range: {
-        start: index.positionU16At(start),
-        end: index.positionU16At(start + name.length),
-      },
-    });
-  }
-  return occ;
-}
-
-/** Map the analysis' byte ranges to positioned declaration/reference occurrences. */
+/**
+ * Map the analysis' byte ranges to positioned declaration/reference
+ * occurrences. Everything — `script:` bindings, `@input`/`@use` directive
+ * declarations, template-expression uses and `<Component/>` tag references —
+ * comes from the parser-backed `analyze` output; this stays a pure projection.
+ */
 function buildOccurrences(source: string, analysis: AnalyzeResult): Occurrence[] {
   const index = new LineIndex(source);
-  const occ: Occurrence[] = inputDeclarations(source, index);
+  const occ: Occurrence[] = [];
   for (const b of analysis.bindings) {
     occ.push({ name: b.name, kind: "declaration", range: index.rangeAt(b.start, b.end) });
   }
