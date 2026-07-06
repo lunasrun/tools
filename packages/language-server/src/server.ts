@@ -7,6 +7,7 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import type { Analyze, Compile } from "@lunas-tools/wasm";
 import { toLspDiagnostics } from "./diagnostics.js";
+import { semanticDiagnostics } from "./semantic-diagnostics.js";
 import {
   documentSymbols,
   foldingRanges,
@@ -101,10 +102,18 @@ export function createServer(
     const text = document.getText();
     try {
       const result = compile(text);
-      connection.sendDiagnostics({
-        uri: document.uri,
-        diagnostics: toLspDiagnostics(text, result),
-      });
+      const diagnostics = toLspDiagnostics(text, result);
+
+      // Merge in the analyzer-derived semantic diagnostics (undefined refs,
+      // unknown components) when an analyzer is wired. `analyzeDoc` returns
+      // `null` — and `semanticDiagnostics` never throws — so the compile
+      // diagnostics keep flowing unchanged if analysis is unavailable.
+      const analysis = analyzeDoc(document);
+      if (analysis) {
+        diagnostics.push(...semanticDiagnostics(text, analysis));
+      }
+
+      connection.sendDiagnostics({ uri: document.uri, diagnostics });
     } catch (err) {
       connection.console.error(`lunas compile failed: ${String(err)}`);
     }
