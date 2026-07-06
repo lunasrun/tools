@@ -19,6 +19,11 @@ import {
   renameEdits,
   hoverAt,
 } from "./navigation.js";
+import {
+  buildSemanticTokens,
+  SEMANTIC_TOKEN_TYPES,
+  SEMANTIC_TOKEN_MODIFIERS,
+} from "./semantic-tokens.js";
 
 /**
  * Supplies the compiler lazily. Returns `null` when no compiler is available
@@ -63,6 +68,13 @@ export function createServer(
         documentHighlightProvider: true,
         renameProvider: true,
         hoverProvider: true,
+        semanticTokensProvider: {
+          legend: {
+            tokenTypes: [...SEMANTIC_TOKEN_TYPES],
+            tokenModifiers: [...SEMANTIC_TOKEN_MODIFIERS],
+          },
+          full: true,
+        },
       },
     }),
   );
@@ -177,6 +189,14 @@ export function createServer(
     const analysis = analyzeDoc(document);
     if (!analysis) return null;
     return hoverAt(document.getText(), analysis, params.position);
+  });
+
+  connection.languages.semanticTokens.on((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return { data: [] };
+    const analysis = analyzeDoc(document);
+    if (!analysis) return { data: [] };
+    return buildSemanticTokens(document.getText(), analysis);
   });
 
   documents.listen(connection);

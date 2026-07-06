@@ -11,6 +11,7 @@ export type {
   Diagnostic,
   CompileResult,
   Compile,
+  SymbolKind,
   SymbolOccurrence,
   AnalyzeResult,
   Analyze,

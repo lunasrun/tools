@@ -35,3 +35,8 @@ export {
   foldingRanges,
   selectionRangeAt,
 } from "./structure.js";
+export {
+  buildSemanticTokens,
+  SEMANTIC_TOKEN_TYPES,
+  SEMANTIC_TOKEN_MODIFIERS,
+} from "./semantic-tokens.js";

@@ -75,11 +75,11 @@ milestones:
         # binding and external/lunas is bumped to lunas main, so the real
         # compiler backs these features.
       - id: ls-semantic-tokens
-        title: Semantic tokens for .lunas blocks
-        status: todo
-        # Also blocked on lunas-side parser exposure: precise token
-        # classification for script/style/html interpolations needs the real
-        # tokenizer/AST, not the structural block scanner.
+        title: Semantic tokens for .lunas symbols
+        status: done
+        # Driven by the `analyze` `kind` (lunasrun/lunas#184): script bindings,
+        # @input props, @use/<Component/> components and :for variables are
+        # coloured variable/property/class over the TextMate grammar.
 
   - id: tsc
     title: lunas-tsc CLI

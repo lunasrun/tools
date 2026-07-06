@@ -34,6 +34,14 @@ export interface CompileResult {
 export type Compile = (source: string) => CompileResult;
 
 /**
+ * How a symbol is categorized for semantic highlighting: a `"variable"` (script
+ * binding, `:for` variable, plain identifier use), a `"prop"` (`@input`), or a
+ * `"component"` (`@use` / `<Component/>`). Widened to `string` so a newer
+ * compiler can add kinds without breaking this type.
+ */
+export type SymbolKind = "variable" | "prop" | "component" | (string & {});
+
+/**
  * One named symbol occurrence with a UTF-8 byte range into the source: either a
  * binding declaration or an identifier reference.
  */
@@ -43,6 +51,8 @@ export interface SymbolOccurrence {
   start: number;
   /** Exclusive end, as a UTF-8 byte offset. */
   end: number;
+  /** Category for semantic highlighting. */
+  kind: SymbolKind;
 }
 
 /**
