@@ -91,3 +91,57 @@ test("hover labels binding vs reference", () => {
 test("hover range covers the symbol under the cursor", () => {
   assert.deepEqual(hoverAt(SRC, ANALYSIS, ON_REF).range, REF_RANGE);
 });
+
+// --- @input prop declarations (scanned from source, not from analyze) ---
+
+// `@input name` declares a prop; the template references it. analyze reports
+// only the reference (byte 33..37 in this source), never the @input decl.
+const INPUT_SRC = "@input name:string\nhtml:\n  <p>${ name }</p>";
+const INPUT_ANALYSIS = {
+  bindings: [],
+  references: [{ name: "name", start: 33, end: 37 }],
+};
+const NAME_DECL_RANGE = {
+  start: { line: 0, character: 7 },
+  end: { line: 0, character: 11 },
+};
+const NAME_REF_RANGE = {
+  start: { line: 2, character: 8 },
+  end: { line: 2, character: 12 },
+};
+const ON_INPUT_REF = { line: 2, character: 9 };
+const ON_INPUT_DECL = { line: 0, character: 8 };
+
+test("definition from a template reference jumps to the @input declaration", () => {
+  assert.deepEqual(definitionAt(URI, INPUT_SRC, INPUT_ANALYSIS, ON_INPUT_REF), [
+    { uri: URI, range: NAME_DECL_RANGE },
+  ]);
+});
+
+test("hover on an @input prop reports it as a binding", () => {
+  assert.match(
+    hoverAt(INPUT_SRC, INPUT_ANALYSIS, ON_INPUT_DECL).contents.value,
+    /\(binding\) name/,
+  );
+});
+
+test("references/rename of an @input prop include the declaration and the use", () => {
+  const refs = referencesAt(URI, INPUT_SRC, INPUT_ANALYSIS, ON_INPUT_DECL, true);
+  assert.equal(refs.length, 2);
+  const ranges = refs.map((l) => l.range);
+  assert.ok(ranges.some((r) => r.start.line === 0)); // the @input decl
+  assert.ok(ranges.some((r) => r.start.line === 2)); // the ${ name } use
+
+  const edit = renameEdits(URI, INPUT_SRC, INPUT_ANALYSIS, ON_INPUT_REF, "who");
+  assert.equal(edit.changes[URI].length, 2);
+  assert.ok(edit.changes[URI].every((e) => e.newText === "who"));
+});
+
+test("multiple @input props are each resolvable", () => {
+  const src = "@input a: number\n@input b: string?\nhtml:\n  <p/>";
+  const analysis = { bindings: [], references: [] };
+  const defA = definitionAt(URI, src, analysis, { line: 0, character: 7 });
+  const defB = definitionAt(URI, src, analysis, { line: 1, character: 7 });
+  assert.equal(defA[0].range.start.line, 0);
+  assert.equal(defB[0].range.start.line, 1);
+});
