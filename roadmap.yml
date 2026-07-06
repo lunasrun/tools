@@ -80,6 +80,20 @@ milestones:
         # Driven by the `analyze` `kind` (lunasrun/lunas#184): script bindings,
         # @input props, @use/<Component/> components and :for variables are
         # coloured variable/property/class over the TextMate grammar.
+      - id: ls-smart-diagnostics
+        title: "Tier 1 diagnostics: undefined references + unknown components"
+        status: done
+        # Computed on the LS side from `analyze` (no wasm export): a template
+        # reference resolving to no binding/@input/@use is undefined; an
+        # unregistered capitalized tag is an unknown component. Conservative,
+        # with a known-globals allowlist.
+      - id: ls-type-diagnostics
+        title: "Tier 2 diagnostics: real TypeScript type errors"
+        status: done
+        # Runs the TypeScript checker over a virtual module (script block +
+        # `${…}` template expressions woven into a function scope, @input props
+        # as typed params) and maps a curated set of type-error codes back to
+        # `.lunas` positions. In lunas-ls (embeds `typescript`); no wasm change.
 
   - id: tsc
     title: lunas-tsc CLI

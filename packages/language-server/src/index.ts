@@ -41,3 +41,4 @@ export {
   SEMANTIC_TOKEN_MODIFIERS,
 } from "./semantic-tokens.js";
 export { semanticDiagnostics } from "./semantic-diagnostics.js";
+export { typeDiagnostics } from "./type-diagnostics.js";
