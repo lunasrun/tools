@@ -146,3 +146,20 @@ test("definition from a <Component/> usage jumps to its @use declaration", () =>
     { uri: URI, range: { start: { line: 0, character: 5 }, end: { line: 0, character: 8 } } },
   ]);
 });
+
+// --- :for loop variable: jump from a body use to the loop-variable decl ---
+
+// `:for="item of items"` — the loop variable `item` is at header bytes 18..22;
+// the `${ item }` body use at bytes 36..40 (analyze provides both).
+const FOR_SRC = 'html:\n  <li :for="item of items">${ item }</li>';
+const FOR_ANALYSIS = {
+  bindings: [{ name: "item", start: 18, end: 22, kind: "variable" }],
+  references: [{ name: "item", start: 36, end: 40, kind: "variable" }],
+};
+
+test("definition from a loop-body use jumps to the :for loop variable", () => {
+  const def = definitionAt(URI, FOR_SRC, FOR_ANALYSIS, { line: 1, character: 31 });
+  assert.deepEqual(def, [
+    { uri: URI, range: { start: { line: 1, character: 12 }, end: { line: 1, character: 16 } } },
+  ]);
+});
