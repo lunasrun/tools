@@ -1,0 +1,26 @@
+{
+  "name": "@lunas-tools/grammar",
+  "version": "0.0.0",
+  "description": "TextMate grammar and language configuration for Lunas (.lunas) single-file components.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./lunas.tmLanguage.json": "./lunas.tmLanguage.json",
+    "./language-configuration.json": "./language-configuration.json"
+  },
+  "files": [
+    "index.js",
+    "lunas.tmLanguage.json",
+    "language-configuration.json"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "tm-grammars": "^1.31.15",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
+  }
+}

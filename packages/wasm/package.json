@@ -1,0 +1,30 @@
+{
+  "name": "@lunas-tools/wasm",
+  "version": "0.0.0",
+  "description": "The Lunas compiler seam: a stable JS API over the Rust lunas_wasm bindings (compile, diagnostics, LineIndex).",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "generated"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^20.19.0"
+  }
+}

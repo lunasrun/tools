@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+*.tsbuildinfo
+
+# wasm-pack generated bindings (rebuilt from the external/lunas submodule)
+packages/wasm/generated/
+
+# VS Code extension grammar assets (synced from @lunas-tools/grammar at build)
+packages/vscode/syntaxes/
+
+# VS Code extension packages
+*.vsix
+
+# Logs & OS cruft
+*.log
+.DS_Store
+
+# Background subagent worktrees
+.claude/worktrees/

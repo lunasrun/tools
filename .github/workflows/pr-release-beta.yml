@@ -1,0 +1,22 @@
+name: Create Release Pull Request to Beta Branch
+on:
+  push:
+    branches: [main]
+jobs:
+  release-pull-request:
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      # The script is API-only (uses the compare + commits/{sha}/pulls REST
+      # endpoints), so a shallow checkout is enough — we don't walk git history.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate / update release PR
+        run: node .github/scripts/release-pr.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_REPOSITORY is provided automatically by GitHub Actions.
+          TZ: Asia/Tokyo

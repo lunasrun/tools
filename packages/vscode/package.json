@@ -1,0 +1,72 @@
+{
+  "name": "lunas-vscode",
+  "displayName": "Lunas",
+  "description": "Lunas language support for VS Code: syntax highlighting and diagnostics for .lunas files.",
+  "version": "0.0.0",
+  "publisher": "lunasdev",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lunasrun/tools.git",
+    "directory": "packages/vscode"
+  },
+  "engines": {
+    "vscode": "^1.78.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./dist/extension.js",
+  "browser": "./dist/browser.js",
+  "activationEvents": [
+    "onLanguage:lunas"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "lunas",
+        "aliases": [
+          "Lunas",
+          "lunas"
+        ],
+        "extensions": [
+          ".lunas"
+        ],
+        "configuration": "./syntaxes/language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lunas",
+        "scopeName": "source.lunas",
+        "path": "./syntaxes/lunas.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.html": "html",
+          "meta.embedded.block.css": "css",
+          "meta.embedded.block.ts": "typescript",
+          "meta.embedded.expression.lunas": "typescript"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "sync-grammar": "node scripts/sync-grammar.mjs",
+    "build": "pnpm run sync-grammar && node esbuild.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm run sync-grammar && node --test",
+    "lint": "tsc --noEmit",
+    "vscode:prepublish": "pnpm run build"
+  },
+  "dependencies": {
+    "@lunas-tools/grammar": "workspace:*",
+    "lunas-ls": "workspace:*",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.78.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}

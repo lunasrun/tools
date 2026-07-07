@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, beta]
+  pull_request:
+
+jobs:
+  quality:
+    name: build · typecheck · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Downstream packages test against a mock compiler, so the wasm binary is
+      # not required here (the real-binary path is covered by the `wasm` job).
+      # Build first: it emits the .d.ts / dist that typecheck and test consume.
+      - name: Build
+        run: pnpm -r build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test
+
+      - name: Release-PR script tests
+        run: node --test .github/scripts/release-pr.test.mjs
+
+  wasm:
+    name: wasm build (external/lunas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install Rust toolchain (from submodule rust-toolchain.toml) + wasm target
+        working-directory: external/lunas/crates
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add wasm32-unknown-unknown
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            external/lunas/crates/target
+          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('external/lunas/crates/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-wasm-
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build the real bindings, then run the wasm package's integration test,
+      # which exercises the genuine compiler end-to-end (it skips loudly when
+      # generated bindings are absent).
+      - name: Build wasm bindings
+        run: pnpm wasm:build
+
+      # The integration test imports the package's compiled dist/, so build the
+      # TypeScript before running it (this job doesn't run the workspace build).
+      - name: Build @lunas-tools/wasm
+        run: pnpm --filter @lunas-tools/wasm run build
+
+      - name: Integration test (real compiler)
+        run: pnpm --filter @lunas-tools/wasm run test
