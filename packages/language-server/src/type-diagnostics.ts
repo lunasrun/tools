@@ -133,28 +133,53 @@ function buildVirtual(
   return { text, segments };
 }
 
-/** Run the TS semantic checker over the virtual module. */
-function checkVirtual(text: string): readonly ts.Diagnostic[] {
-  const sourceFile = ts.createSourceFile(
-    VIRTUAL_FILE,
-    text,
-    ts.ScriptTarget.ES2020,
-    true,
-  );
-  const defaultHost = ts.createCompilerHost(COMPILER_OPTIONS, true);
-  const host: ts.CompilerHost = {
-    ...defaultHost,
-    getSourceFile: (name, langVersion, onError, shouldCreate) =>
-      name === VIRTUAL_FILE
-        ? sourceFile
-        : defaultHost.getSourceFile(name, langVersion, onError, shouldCreate),
-    readFile: (name) =>
-      name === VIRTUAL_FILE ? text : defaultHost.readFile(name),
-    fileExists: (name) => name === VIRTUAL_FILE || defaultHost.fileExists(name),
-    writeFile: () => {},
+// A persistent LanguageService + DocumentRegistry keeps the large `lib.*.d.ts`
+// ASTs parsed once and reused across checks (they never change), so each
+// keystroke only re-parses the small virtual file rather than rebuilding the
+// whole program — the dominant cost. The service is a Node-only singleton (it
+// reads lib files from disk via `ts.sys`); the LS runs single-threaded, so
+// mutating the current-file state between calls is safe.
+let service: ts.LanguageService | null = null;
+let serviceUnavailable = false;
+let currentText = "";
+let version = 0;
+
+function getService(): ts.LanguageService | null {
+  if (service) return service;
+  if (serviceUnavailable || !ts.sys) {
+    serviceUnavailable = true; // no filesystem (e.g. browser) — disable Tier 2
+    return null;
+  }
+  const sys = ts.sys;
+  const host: ts.LanguageServiceHost = {
+    getScriptFileNames: () => [VIRTUAL_FILE],
+    getScriptVersion: (f) => (f === VIRTUAL_FILE ? String(version) : "1"),
+    getScriptSnapshot: (f) => {
+      const text = f === VIRTUAL_FILE ? currentText : sys.readFile(f);
+      return text === undefined
+        ? undefined
+        : ts.ScriptSnapshot.fromString(text);
+    },
+    getCurrentDirectory: () => "",
+    getCompilationSettings: () => COMPILER_OPTIONS,
+    getDefaultLibFileName: (o) => ts.getDefaultLibFilePath(o),
+    fileExists: sys.fileExists,
+    readFile: sys.readFile,
+    readDirectory: sys.readDirectory,
+    directoryExists: sys.directoryExists,
+    getDirectories: sys.getDirectories,
   };
-  const program = ts.createProgram([VIRTUAL_FILE], COMPILER_OPTIONS, host);
-  return program.getSemanticDiagnostics(program.getSourceFile(VIRTUAL_FILE));
+  service = ts.createLanguageService(host, ts.createDocumentRegistry());
+  return service;
+}
+
+/** Run the TS semantic checker over the virtual module (reusing cached libs). */
+function checkVirtual(text: string): readonly ts.Diagnostic[] {
+  const svc = getService();
+  if (!svc) return [];
+  currentText = text;
+  version += 1;
+  return svc.getSemanticDiagnostics(VIRTUAL_FILE);
 }
 
 /** Map a virtual-file offset to a source (UTF-16) offset via the segments. */
